@@ -1,1 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReiCal</title>
 
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0d0d12;
+  color: white;
+}
+
+header {
+  padding: 28px 20px;
+  text-align: center;
+  background: linear-gradient(135deg, #15151f, #29152f);
+  border-bottom: 1px solid #333;
+}
+
+.logo {
+  font-size: 34px;
+  font-weight: bold;
+}
+
+.subtitle {
+  color: #bdbdc8;
+  margin-top: 8px;
+}
+
+.container {
+  max-width: 650px;
+  margin: auto;
+  padding: 20px;
+}
+
+.card {
+  background: #17171f;
+  border: 1px solid #2d2d38;
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 13px;
+  margin: 7px 0;
+  border-radius: 10px;
+  border: 1px solid #3a3a46;
+  background: #101017;
+  color: white;
+  font-size: 16px;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 10px;
+  background: #8b5cf6;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+button:active {
+  transform: scale(.98);
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px;
+  background: #101017;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+.meal {
+  padding: 14px;
+  margin-top: 10px;
+  background: #101017;
+  border-radius: 12px;
+  border-left: 4px solid #8b5cf6;
+}
+
+.delete {
+  background: #3a1820;
+  margin-top: 8px;
+}
+
+.water {
+  font-size: 28px;
+  text-align: center;
+  margin: 15px 0;
+}
+
+footer {
+  text-align: center;
+  color: #777;
+  padding: 25px;
+  font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">⚔️ ReiCal</div>
+  <div class="subtitle">Track your meals. Build healthy habits.</div>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>🍱 Add a Meal</h2>
+
+    <select id="mealType">
+      <option>Breakfast</option>
+      <option>Lunch</option>
+      <option>Dinner</option>
+      <option>Snack</option>
+    </select>
+
+    <input id="food" type="text" placeholder="What did you eat?">
+
+    <textarea id="notes" placeholder="Optional notes..."></textarea>
+
+    <button onclick="addMeal()">Add Meal</button>
+  </div>
+
+  <div class="card">
+    <h2>💧 Water</h2>
+
+    <div class="water">
+      <span id="waterCount">0</span> glasses
+    </div>
+
+    <button onclick="addWater()">+ Add Glass</button>
+    <button onclick="removeWater()">− Remove Glass</button>
+  </div>
+
+  <div class="card">
+    <h2>📊 Today's Summary</h2>
+
+    <div class="stat">
+      <span>Meals logged</span>
+      <strong id="mealCount">0</strong>
+    </div>
+
+    <div class="stat">
+      <span>Water glasses</span>
+      <strong id="waterSummary">0</strong>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🍽️ Today's Meals</h2>
+    <div id="mealList">
+      <p style="color:#888;">No meals logged yet.</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  ReiCal • A simple personal meal & wellness tracker
+</footer>
+
+<script>
+
+let meals = JSON.parse(localStorage.getItem("reicalMeals")) || [];
+let water = Number(localStorage.getItem("reicalWater")) || 0;
+
+function save() {
+  localStorage.setItem("reicalMeals", JSON.stringify(meals));
+  localStorage.setItem("reicalWater", water);
+}
+
+function addMeal() {
+
+  const type = document.getElementById("mealType").value;
+  const food = document.getElementById("food").value.trim();
+  const notes = document.getElementById("notes").value.trim();
+
+  if (!food) {
+    alert("Please enter what you ate.");
+    return;
+  }
+
+  meals.push({
+    type: type,
+    food: food,
+    notes: notes
+  });
+
+  document.getElementById("food").value = "";
+  document.getElementById("notes").value = "";
+
+  save();
+  update();
+}
+
+function deleteMeal(index) {
+  meals.splice(index, 1);
+  save();
+  update();
+}
+
+function addWater() {
+  water++;
+  save();
+  update();
+}
+
+function removeWater() {
+  if (water > 0) water--;
+  save();
+  update();
+}
+
+function update() {
+
+  document.getElementById("mealCount").textContent = meals.length;
+  document.getElementById("waterCount").textContent = water;
+  document.getElementById("waterSummary").textContent = water;
+
+  const list = document.getElementById("mealList");
+
+  if (meals.length === 0) {
+    list.innerHTML = '<p style="color:#888;">No meals logged yet.</p>';
+    return;
+  }
+
+  list.innerHTML = "";
+
+  meals.forEach((meal, index) => {
+
+    const div = document.createElement("div");
+    div.className = "meal";
+
+    div.innerHTML = `
+      <strong>${escapeHTML(meal.type)}</strong>
+      <br>
+      ${escapeHTML(meal.food)}
+      ${meal.notes ? `<br><small style="color:#999;">${escapeHTML(meal.notes)}</small>` : ""}
+      <button class="delete" onclick="deleteMeal(${index})">
+        Delete
+      </button>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+function escapeHTML(text) {
+  return text.replace(/[&<>"']/g, function(char) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[char];
+  });
+}
+
+update();
+
+</script>
+
+</body>
+</html>
